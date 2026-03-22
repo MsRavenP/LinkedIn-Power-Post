@@ -36,6 +36,21 @@ export interface BrandProfile {
   team_id?: string
 }
 
+export interface UserProfile {
+  id?: string
+  full_name: string
+  job_title: string
+  industry: string
+  writing_style: string
+  personality_traits: string
+  target_audience: string
+  topics_of_expertise: string
+  personal_values: string
+  signature_phrases: string
+  words_to_avoid: string
+  example_posts: string
+}
+
 export interface PostRecord {
   id: string
   created_at: string

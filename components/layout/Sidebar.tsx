@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Linkedin,
+  UserCircle2,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/create", label: "Create Post", icon: PenSquare },
   { href: "/history", label: "Post History", icon: History },
+  { href: "/profile", label: "My Voice Profile", icon: UserCircle2 },
   { href: "/settings", label: "Brand Profile", icon: Settings },
 ]
 

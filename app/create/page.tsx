@@ -108,20 +108,50 @@ export default function CreatePage() {
     setIsGenerating(true)
 
     try {
-      // Fetch brand profile for company posts
+      // Fetch brand profile for company posts and user profile for personal posts
       let brandProfile: string | undefined
+      let userProfile: string | undefined
+
+      const fetches: Promise<void>[] = []
+
       if (mode === "company" || mode === "both") {
-        const bpRes = await fetch("/api/brand-profile")
-        const bp = await bpRes.json()
-        if (bp) {
-          brandProfile = `Company: ${bp.company_name}, Industry: ${bp.industry}, Tone: ${bp.tone_description}, Audience: ${bp.target_audience}`
-        }
+        fetches.push(
+          fetch("/api/brand-profile").then(r => r.json()).then(bp => {
+            if (bp && bp.company_name) {
+              brandProfile = `Company: ${bp.company_name}, Industry: ${bp.industry}, Tone: ${bp.tone_description}, Audience: ${bp.target_audience}, Key messages: ${bp.taglines}, Language notes: ${bp.example_language}`
+            }
+          })
+        )
       }
+
+      if (mode === "personal" || mode === "both") {
+        fetches.push(
+          fetch("/api/user-profile").then(r => r.json()).then(up => {
+            if (up && up.full_name) {
+              userProfile = [
+                up.full_name && `Name: ${up.full_name}`,
+                up.job_title && `Role: ${up.job_title}`,
+                up.industry && `Industry: ${up.industry}`,
+                up.writing_style && `Writing style: ${up.writing_style}`,
+                up.personality_traits && `Personality: ${up.personality_traits}`,
+                up.target_audience && `Audience: ${up.target_audience}`,
+                up.topics_of_expertise && `Topics: ${up.topics_of_expertise}`,
+                up.personal_values && `Values: ${up.personal_values}`,
+                up.signature_phrases && `Signature phrases: ${up.signature_phrases}`,
+                up.words_to_avoid && `Words/phrases to avoid: ${up.words_to_avoid}`,
+                up.example_posts && `Example posts for style reference:\n${up.example_posts}`,
+              ].filter(Boolean).join("\n")
+            }
+          })
+        )
+      }
+
+      await Promise.all(fetches)
 
       const res = await fetch("/api/generate-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages, tone, mode, brandProfile }),
+        body: JSON.stringify({ messages, tone, mode, brandProfile, userProfile }),
       })
 
       const data: GeneratedPosts = await res.json()

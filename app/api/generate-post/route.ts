@@ -4,14 +4,16 @@ import { ChatMessage, Tone, PostMode, GeneratedPosts } from "@/types"
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-function buildPersonalPrompt(conversation: string, tone: Tone): string {
+function buildPersonalPrompt(conversation: string, tone: Tone, userProfile?: string): string {
   return `Based on this conversation, write 2 variations of a LinkedIn post for a PERSONAL account.
 
 Conversation:
 ${conversation}
 
+${userProfile ? `Personal Brand Voice Profile:\n${userProfile}\n\nIMPORTANT: Write in this person's authentic voice. Mirror their writing style, personality traits, and use their signature phrases naturally. Avoid any words or phrases they listed to avoid.` : ""}
+
 Requirements:
-- Write in FIRST PERSON (I, my, we)
+- Write in FIRST PERSON (I, my)
 - Tone: ${tone}
 - Length: 150-300 words
 - Include relevant emojis
@@ -50,11 +52,13 @@ export async function POST(request: NextRequest) {
     tone,
     mode,
     brandProfile,
+    userProfile,
   }: {
     messages: ChatMessage[]
     tone: Tone
     mode: PostMode
     brandProfile?: string
+    userProfile?: string
   } = await request.json()
 
   const conversation = messages
@@ -77,7 +81,7 @@ export async function POST(request: NextRequest) {
               role: "system",
               content: "You are a LinkedIn post writer. Always respond with valid JSON only.",
             },
-            { role: "user", content: buildPersonalPrompt(conversation, tone) },
+            { role: "user", content: buildPersonalPrompt(conversation, tone, userProfile) },
           ],
         })
         const text = completion.choices[0]?.message?.content ?? ""

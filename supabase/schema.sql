@@ -64,6 +64,43 @@ create policy "Users can delete own posts"
   on posts for delete
   using (auth.uid() = user_id);
 
+-- User Voice Profiles table
+create table if not exists user_profiles (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null unique,
+  full_name text default '',
+  job_title text default '',
+  industry text default '',
+  writing_style text default '',
+  personality_traits text default '',
+  target_audience text default '',
+  topics_of_expertise text default '',
+  personal_values text default '',
+  signature_phrases text default '',
+  words_to_avoid text default '',
+  example_posts text default '',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table user_profiles enable row level security;
+
+create policy "Users can view own user profile"
+  on user_profiles for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own user profile"
+  on user_profiles for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own user profile"
+  on user_profiles for update
+  using (auth.uid() = user_id);
+
+create trigger update_user_profiles_updated_at
+  before update on user_profiles
+  for each row execute function update_updated_at_column();
+
 -- Updated_at trigger for brand_profiles
 create or replace function update_updated_at_column()
 returns trigger as $$
