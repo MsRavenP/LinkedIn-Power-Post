@@ -11,6 +11,17 @@ interface ImageGeneratorProps {
   postContent: string
 }
 
+const COLOR_PRESETS = [
+  { label: "Sky",     accent: "#38BDF8", bg1: "#0F172A", bg2: "#1E3A5F" },
+  { label: "Purple",  accent: "#C084FC", bg1: "#1A0533", bg2: "#3B0764" },
+  { label: "Green",   accent: "#34D399", bg1: "#022C22", bg2: "#0D4429" },
+  { label: "Orange",  accent: "#FB923C", bg1: "#1C0A00", bg2: "#431407" },
+  { label: "Gold",    accent: "#FBBF24", bg1: "#0A0F1E", bg2: "#0A3366" },
+  { label: "Blue",    accent: "#60A5FA", bg1: "#0D1B2A", bg2: "#1A3A5C" },
+  { label: "Pink",    accent: "#F472B6", bg1: "#2D0A1E", bg2: "#5B1239" },
+  { label: "Red",     accent: "#F87171", bg1: "#1C0505", bg2: "#4A0E0E" },
+]
+
 export default function ImageGenerator({ postContent }: ImageGeneratorProps) {
   const [type, setType] = useState<"single" | "carousel">("single")
   const [images, setImages] = useState<string[]>([])
@@ -19,6 +30,7 @@ export default function ImageGenerator({ postContent }: ImageGeneratorProps) {
   const [slideCount, setSlideCount] = useState<number | null>(null)
   const [slideReason, setSlideReason] = useState("")
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [selectedColor, setSelectedColor] = useState(COLOR_PRESETS[0])
 
   async function suggestSlides() {
     setSuggestingSlides(true)
@@ -56,6 +68,7 @@ export default function ImageGenerator({ postContent }: ImageGeneratorProps) {
           postContent,
           type,
           slideCount: slideCount ?? 5,
+          brandColor: selectedColor,
         }),
       })
 
@@ -124,6 +137,27 @@ export default function ImageGenerator({ postContent }: ImageGeneratorProps) {
         >
           <LayoutGrid className="h-4 w-4" /> Carousel
         </button>
+      </div>
+
+      {/* Brand color picker */}
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-muted-foreground">Brand Color</p>
+        <div className="flex gap-2 flex-wrap">
+          {COLOR_PRESETS.map((color) => (
+            <button
+              key={color.label}
+              title={color.label}
+              onClick={() => setSelectedColor(color)}
+              className={cn(
+                "w-7 h-7 rounded-full border-2 transition-all",
+                selectedColor.accent === color.accent
+                  ? "border-gray-800 scale-110 shadow-md"
+                  : "border-transparent hover:scale-105"
+              )}
+              style={{ backgroundColor: color.accent }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Slide count suggestion */}

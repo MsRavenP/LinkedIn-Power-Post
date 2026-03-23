@@ -133,8 +133,12 @@ function wrapText(text: string, maxChars: number, maxLines: number): string[] {
 }
 
 type Theme = { bg1: string; bg2: string; accent: string; textSub: string }
+type BrandColor = { accent: string; bg1: string; bg2: string }
 
-function getTheme(content: string): Theme {
+function getTheme(content: string, brandColor?: BrandColor): Theme {
+  if (brandColor) {
+    return { ...brandColor, textSub: "rgba(255,255,255,0.70)" }
+  }
   const hash = content.split("").reduce((a, c) => a + c.charCodeAt(0), 0)
   const themes: Theme[] = [
     { bg1: "#0F172A", bg2: "#1E3A5F", accent: "#38BDF8", textSub: "rgba(255,255,255,0.70)" },
@@ -158,8 +162,8 @@ function dotGrid(cols: number, rows: number, gap: number, color: string, opacity
 
 // ─── SINGLE IMAGE ─────────────────────────────────────────────────────────────
 
-function buildSingleSVG(content: SingleImageContent, postContent: string): string {
-  const theme = getTheme(postContent)
+function buildSingleSVG(content: SingleImageContent, postContent: string, brandColor?: BrandColor): string {
+  const theme = getTheme(postContent, brandColor)
 
   const headlineLines = wrapText(escapeXml(content.headline), 20, 3)
   const subtextLines = wrapText(escapeXml(content.subtext), 38, 3)
@@ -197,14 +201,9 @@ function buildSingleSVG(content: SingleImageContent, postContent: string): strin
   <circle cx="1024" cy="1024" r="380" fill="none" stroke="${theme.accent}" stroke-width="1.5" opacity="0.07"/>
   <rect x="0" y="0" width="1024" height="7" fill="url(#acc)"/>
   <text x="55" y="330" font-family="Georgia, serif" font-size="280" font-weight="900" fill="${theme.accent}" opacity="0.08">"</text>
-  <rect x="900" y="38" width="68" height="68" rx="13" fill="${theme.accent}"/>
-  <text x="934" y="89" font-family="Arial Black, Arial, sans-serif" font-size="42" font-weight="900" fill="${theme.bg1}" text-anchor="middle">in</text>
   ${titleEls}
   <rect x="80" y="${dividerY}" width="180" height="6" rx="3" fill="url(#acc)"/>
   ${subEls}
-  <rect x="0" y="928" width="1024" height="96" fill="rgba(0,0,0,0.45)"/>
-  <rect x="0" y="928" width="7" height="96" fill="${theme.accent}"/>
-  <text x="36" y="984" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="${theme.accent}" letter-spacing="5">LINKEDIN POWER POST</text>
 </svg>`
 }
 
@@ -240,8 +239,6 @@ function buildCoverSlideSVG(slide: SlideContent, total: number, theme: Theme): s
   ${titleEls}
   <rect x="80" y="${afterTitle + 20}" width="200" height="7" rx="3.5" fill="${theme.accent}"/>
   <text x="80" y="${afterTitle + 86}" font-family="Arial, sans-serif" font-size="24" fill="${theme.accent}" opacity="0.8" letter-spacing="4">KEY INSIGHTS &amp; TAKEAWAYS</text>
-  <rect x="80" y="916" width="60" height="60" rx="11" fill="${theme.accent}" opacity="0.9"/>
-  <text x="110" y="960" font-family="Arial Black, Arial, sans-serif" font-size="36" font-weight="900" fill="${theme.bg1}" text-anchor="middle">in</text>
 </svg>`
 }
 
@@ -281,8 +278,6 @@ function buildContentSlideSVG(slide: SlideContent, slideNum: number, total: numb
   ${titleEls}
   <rect x="80" y="${titleY + titleLines.length * titleLineH + 16}" width="130" height="5" rx="2.5" fill="${theme.accent}" opacity="0.8"/>
   ${bodyEls}
-  <rect x="80" y="924" width="52" height="52" rx="9" fill="${theme.accent}" opacity="0.85"/>
-  <text x="106" y="962" font-family="Arial Black, Arial, sans-serif" font-size="31" font-weight="900" fill="${theme.bg1}" text-anchor="middle">in</text>
 </svg>`
 }
 
@@ -314,9 +309,6 @@ function buildCtaSlideSVG(slide: SlideContent, slideNum: number, total: number, 
   <text x="512" y="482" font-family="Arial Black, Arial, sans-serif" font-size="80" font-weight="900" fill="white" text-anchor="middle">reading!</text>
   <rect x="312" y="520" width="400" height="6" rx="3" fill="${theme.accent}"/>
   ${ctaEls}
-  <rect x="432" y="676" width="160" height="160" rx="28" fill="${theme.accent}"/>
-  <text x="512" y="790" font-family="Arial Black, Arial, sans-serif" font-size="96" font-weight="900" fill="${theme.bg1}" text-anchor="middle">in</text>
-  <text x="512" y="880" font-family="Arial, sans-serif" font-size="24" fill="${theme.accent}" text-anchor="middle" opacity="0.75" letter-spacing="3">LINKEDIN POWER POST</text>
 </svg>`
 }
 
@@ -327,17 +319,21 @@ function svgToDataUrl(svg: string): string {
 // ─── ROUTE HANDLER ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const { postContent, type, slideCount }: { postContent: string; type: "single" | "carousel"; slideCount?: number } =
-    await request.json()
+  const { postContent, type, slideCount, brandColor }: {
+    postContent: string
+    type: "single" | "carousel"
+    slideCount?: number
+    brandColor?: BrandColor
+  } = await request.json()
 
   if (type === "single") {
     const content = await generateSingleContent(postContent)
-    return NextResponse.json({ images: [svgToDataUrl(buildSingleSVG(content, postContent))], type: "single" })
+    return NextResponse.json({ images: [svgToDataUrl(buildSingleSVG(content, postContent, brandColor))], type: "single" })
   }
 
   const count = Math.max(3, slideCount || 5)
   const slides = await generateCarouselContent(postContent, count)
-  const theme = getTheme(postContent)
+  const theme = getTheme(postContent, brandColor)
 
   const images = slides.map((slide, i) => {
     if (slide.type === "cover") return svgToDataUrl(buildCoverSlideSVG(slide, count, theme))
